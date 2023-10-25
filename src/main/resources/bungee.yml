@@ -1,0 +1,5 @@
+name: BCustomPlayerEvent
+version: '${project.version}'
+main: cn.sandtripper.minecraft.bcustomplayerevent.BCustomPlayerEvent
+author: 'SandTripper'
+description: '自定义玩家进入退出消息'

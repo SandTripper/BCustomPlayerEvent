@@ -1,0 +1,12 @@
+#玩家第一次加入时的消息，使用{PLAYER}代替玩家名
+player-first-join-message: '&c全&6体&e起&a立&b! &9欢&5迎&d新&c玩&6家 &e&l{PLAYER}'
+
+#玩家加入时的消息，使用{PLAYER}代替玩家名
+player-join-message: '&2+&7 {PLAYER}'
+
+#玩家离开时的消息，使用{PLAYER}代替玩家名
+player-leave-message: '&4-&7 {PLAYER}'
+
+#忽略的玩家
+ignore-players:
+  - 'operator'
