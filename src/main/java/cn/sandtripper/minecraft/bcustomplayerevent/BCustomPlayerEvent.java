@@ -1,6 +1,11 @@
 package cn.sandtripper.minecraft.bcustomplayerevent;
 
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.config.Configuration;
+
+import java.util.*;
 
 
 public final class BCustomPlayerEvent extends Plugin {
@@ -23,13 +28,34 @@ public final class BCustomPlayerEvent extends Plugin {
         this.configManager = new ConfigManager(this, "config.yml");
         this.playersConfigManager = new ConfigManager(this, "players.yml");
         this.configManager.saveDefaultConfig();
+        getConfigTmpVar();
         this.playersConfigManager.saveDefaultConfig();
-        getProxy().getPluginManager().registerListener(this, new EventsHandler(configManager, playersConfigManager));//注册监听器
-        getProxy().getPluginManager().registerCommand(this, new CommandHandler(configManager));
+        this.playersConfig = this.playersConfigManager.getConfig();
+        this.joinLeaveQue = new ArrayDeque<>();
+        this.firstJoinQue = new ArrayDeque<>();
+        this.isStopped = false;
+        getProxy().getPluginManager().registerListener(this, new EventsHandler(this));//注册监听器
+        getProxy().getPluginManager().registerCommand(this, new CommandHandler(this));
         //显示加载文字
         for (int i = 0; i < enableTexts.length; i++) {
             getLogger().info(enableTexts[i]);
         }
+
+        this.ignoreSet = new HashSet<String>();
+        this.playerSet = new HashSet<UUID>();
+        for (String strId : playersConfig.getStringList("players")) {
+            playerSet.add(UUID.fromString(strId));
+        }
+    }
+
+    private void getConfigTmpVar() {
+        config = configManager.getConfig();
+        ignoreSet = new HashSet<>(config.getStringList("ignore-players"));
+        playerJoinLeaveSeconds = config.getInt("player-join-leave-seconds");
+        playerJoinLeaveLimit = config.getInt("player-join-leave-limit");
+        playerFirstJoinSeconds = config.getInt("player-first-join-seconds");
+        playerFirstJoinLimit = config.getInt("player-first-join-limit");
+        notWriteFirstJoin = config.getBoolean("not-write-first-join");
     }
 
     @Override
@@ -37,6 +63,116 @@ public final class BCustomPlayerEvent extends Plugin {
         // Plugin shutdown logic
     }
 
+    public void reload() {
+        configManager.reloadConfig();
+        getConfigTmpVar();
+    }
+
+    public void playerLogin(ProxiedPlayer player) {
+        if (isStopped) {
+            return;
+        }
+        if (ignoreSet.contains(player.getName())) {
+            return;
+        }
+        if (isNewPlayer(player.getUniqueId())) {
+            boolean check = checkUpdatefirstJoinLimit();
+            if (check) {
+                for (ProxiedPlayer sendPlayer : ProxyServer.getInstance().getPlayers()) {
+                    sendPlayer.sendMessage(colorFormat(config.getString("player-first-join-message").replace("{PLAYER}", player.getName())));
+                }
+            }
+            if (check || !notWriteFirstJoin) {
+                //效率低，待优化
+                List<String> oldList = playersConfig.getStringList("players");
+                oldList.add(player.getUniqueId().toString());
+                this.playersConfigManager.getConfig().set("players", oldList);
+                this.playersConfigManager.saveConfig();
+                this.playerSet.add(player.getUniqueId());
+            }
+        } else {
+            boolean check = checkUpdateJoinLeaveLimit();
+            if (check) {
+                for (ProxiedPlayer sendPlayer : ProxyServer.getInstance().getPlayers()) {
+                    sendPlayer.sendMessage(colorFormat(config.getString("player-join-message").replace("{PLAYER}", player.getName())));
+                }
+            }
+        }
+    }
+
+    public void playerDisconnect(ProxiedPlayer player) {
+        if (isStopped) {
+            return;
+        }
+        if (ignoreSet.contains(player.getName())) {
+            return;
+        }
+        boolean check = checkUpdateJoinLeaveLimit();
+        if (check) {
+            for (ProxiedPlayer sendPlayer : ProxyServer.getInstance().getPlayers()) {
+                player.sendMessage(colorFormat(config.getString("player-leave-message").replace("{PLAYER}", sendPlayer.getName())));
+            }
+        }
+    }
+
+    boolean checkUpdateJoinLeaveLimit() {
+        long currentTime = System.currentTimeMillis() / 1000;
+        joinLeaveQue.offer(currentTime);
+        while (!joinLeaveQue.isEmpty()) {
+            if (currentTime - joinLeaveQue.peek() > playerJoinLeaveSeconds) {
+                joinLeaveQue.poll();
+            }
+        }
+        return joinLeaveQue.size() <= playerJoinLeaveLimit;
+    }
+
+    boolean checkUpdatefirstJoinLimit() {
+        long currentTime = System.currentTimeMillis() / 1000;
+        firstJoinQue.offer(currentTime);
+        while (!firstJoinQue.isEmpty()) {
+            if (currentTime - firstJoinQue.peek() > playerFirstJoinSeconds) {
+                firstJoinQue.poll();
+            }
+        }
+        return firstJoinQue.size() <= playerFirstJoinLimit;
+    }
+
+
+    private String colorFormat(String message) {
+        if (message == null) {
+            return "";
+        }
+        return message.replace("&", "§");
+    }
+
+    public boolean isNewPlayer(UUID uuid) {
+        return !playerSet.contains(uuid);
+    }
+
+    public void stop() {
+        isStopped = true;
+    }
+
+    public void start() {
+        isStopped = false;
+    }
+
+
+    private Configuration config;
+    private Configuration playersConfig;
+    private HashSet<String> ignoreSet;
+    private HashSet<UUID> playerSet;
     private ConfigManager configManager;
     private ConfigManager playersConfigManager;
+
+    private Queue<Long> joinLeaveQue;
+    private Queue<Long> firstJoinQue;
+
+    private int playerJoinLeaveSeconds;
+    private int playerJoinLeaveLimit;
+    private int playerFirstJoinSeconds;
+    private int playerFirstJoinLimit;
+    private boolean notWriteFirstJoin;
+
+    boolean isStopped;
 }

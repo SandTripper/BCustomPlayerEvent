@@ -21,7 +21,6 @@ public class ConfigManager {
         this.plugin = plugin;
         this.configName = filename;
         this.configFile = new File(plugin.getDataFolder(), filename);
-        this.version = 1;
     }
 
     public void saveDefaultConfig() {
@@ -52,13 +51,6 @@ public class ConfigManager {
         return config;
     }
 
-    public int getVersion() {
-        return version;
-    }
-
-    public boolean isOutVersion(int version) {
-        return version != this.version;
-    }
 
     public void reloadConfig() {
         this.version++;

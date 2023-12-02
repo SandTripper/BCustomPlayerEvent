@@ -7,6 +7,19 @@ player-join-message: '&2+&7 {PLAYER}'
 #玩家离开时的消息，使用{PLAYER}代替玩家名
 player-leave-message: '&4-&7 {PLAYER}'
 
+#反压测
+#在player-join-leave-seconds秒内如果超过
+#player-join-leave-limit的加入离开数量被播报，则暂停播报
+player-join-leave-seconds: 60
+player-join-leave-limit: 10
+
+#在player-first-join-seconds秒内如果超过
+#player-first-join-limit的新玩家数量被播报，则暂停播报新玩家
+player-first-join-seconds: 60
+player-first-join-limit: 5
+#暂停播报新玩家时，是否停止记录新玩家
+not-write-first-join: false
+
 #忽略的玩家
 ignore-players:
   - 'operator'
