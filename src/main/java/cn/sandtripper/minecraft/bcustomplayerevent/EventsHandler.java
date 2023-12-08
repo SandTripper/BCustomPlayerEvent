@@ -15,11 +15,13 @@ public class EventsHandler implements Listener {
 
     @EventHandler
     public void onPostLogin(PostLoginEvent event) {
+
         plugin.playerLogin(event.getPlayer());
     }
 
     @EventHandler
     public void onPlayerDisconnectEvent(PlayerDisconnectEvent event) {
+
         plugin.playerDisconnect(event.getPlayer());
     }
 

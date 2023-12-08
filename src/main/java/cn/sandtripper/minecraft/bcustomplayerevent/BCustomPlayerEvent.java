@@ -41,7 +41,6 @@ public final class BCustomPlayerEvent extends Plugin {
             getLogger().info(enableTexts[i]);
         }
 
-        this.ignoreSet = new HashSet<String>();
         this.playerSet = new HashSet<UUID>();
         for (String strId : playersConfig.getStringList("players")) {
             playerSet.add(UUID.fromString(strId));
@@ -121,6 +120,8 @@ public final class BCustomPlayerEvent extends Plugin {
         while (!joinLeaveQue.isEmpty()) {
             if (currentTime - joinLeaveQue.peek() > playerJoinLeaveSeconds) {
                 joinLeaveQue.poll();
+            } else {
+                break;
             }
         }
         return joinLeaveQue.size() <= playerJoinLeaveLimit;
@@ -132,6 +133,8 @@ public final class BCustomPlayerEvent extends Plugin {
         while (!firstJoinQue.isEmpty()) {
             if (currentTime - firstJoinQue.peek() > playerFirstJoinSeconds) {
                 firstJoinQue.poll();
+            } else {
+                break;
             }
         }
         return firstJoinQue.size() <= playerFirstJoinLimit;
